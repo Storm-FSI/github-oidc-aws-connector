@@ -1,0 +1,108 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Create a role with identity provider",
+    "Parameters" : {
+      "AWSAccountId" : {
+        "Type" : "String",
+        "Description" : "Enter AWS account id",
+        "AllowedPattern" : "^[\\d]{12}$"
+      },
+      "GitHubOrg" : {
+        "Type" : "String",
+        "Description" : "Enter Gitub Organisation"
+      },
+      "RepositoryName" : {
+        "Type" : "String",
+        "Description" : "Enter Repository Github Name"
+      },
+      "AWSManagedPolicy": {
+            "Type": "String",
+            "Description": "ARN of the IAM Managed Policy to add to the role"
+        }
+    },
+    "Resources": {
+        "Role": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Federated": {
+                                    "Fn::Sub": [
+                                        "arn:aws:iam::${accountId}:oidc-provider/token.actions.githubusercontent.com",
+                                        {"accountId": {
+                                                "Ref": "AWSAccountId"
+                                            }}
+                                    ]
+                                }
+                            },
+                            "Action": "sts:AssumeRoleWithWebIdentity",
+                            "Condition": {
+                                "StringLike": {
+                                    "token.actions.githubusercontent.com:sub": {
+                                        "Fn::Sub": [
+                                            "repo:${gitHubOrg}/${repoName}:*",
+                                            {
+                                                "gitHubOrg": {
+                                                "Ref": "GitHubOrg"
+                                            },
+                                                "repoName": {
+                                                    "Ref": "RepositoryName" 
+                                                }
+                                            }
+                                        ]
+
+                                    }
+                                },
+                                "ForAllValues:StringEquals": {
+                                    "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+                                    "token.actions.githubusercontent.com:iss": "https://token.actions.githubusercontent.com"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "RoleName": { "Ref" : "AWS::StackName" },
+                "ManagedPolicyArns": [
+                    {
+                        "Ref": "AWSManagedPolicy"
+                    }
+                ]
+            }
+        },
+        "OIDCProvider": {
+            "Type": "AWS::IAM::OIDCProvider",
+            "Properties": {
+              "Url": "https://token.actions.githubusercontent.com",
+              "ClientIdList": [
+                "sts.amazonaws.com"
+              ],
+              "ThumbprintList": [
+                "6938fd4d98bab03faadb97b34396831e3780aea1"
+              ]
+            }
+        }
+    },
+    "Outputs": {
+        "GitHubRole": {
+            "Description": "Create a role with openID",
+            "Value": {
+                "Fn::GetAtt": [
+                    "Role",
+                    "Arn"
+                ]
+            }
+        },
+        "GitHubIdentityProvider": {
+            "Description": "Create a identity provider",
+            "Value": {
+                "Fn::GetAtt": [
+                    "OIDCProvider",
+                    "Arn"
+                ]
+            }
+        }
+    }
+}
