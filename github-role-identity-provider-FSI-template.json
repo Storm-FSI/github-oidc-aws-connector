@@ -2,22 +2,17 @@
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "Create a role with identity provider",
     "Parameters" : {
-      "AWSAccountId" : {
-        "Type" : "String",
-        "Description" : "Enter AWS account id",
-        "AllowedPattern" : "^[\\d]{12}$"
-      },
       "GitHubOrg" : {
         "Type" : "String",
         "Description" : "Enter Gitub Organisation"
       },
       "RepositoryName" : {
         "Type" : "String",
-        "Description" : "Enter Repository Github Name"
+        "Description" : "Enter Repository Github Name (e.g. 'reponame:*' or just '*')"
       },
       "AWSManagedPolicy": {
             "Type": "String",
-            "Description": "ARN of the IAM Managed Policy to add to the role"
+            "Description": "ARN of the IAM Managed Policy to add to the role (e.g. arn:aws:iam::aws:policy/AmazonS3FullAccess)"
         }
     },
     "Resources": {
@@ -33,7 +28,7 @@
                                     "Fn::Sub": [
                                         "arn:aws:iam::${accountId}:oidc-provider/token.actions.githubusercontent.com",
                                         {"accountId": {
-                                                "Ref": "AWSAccountId"
+                                                "Ref": "AWS::AccountId"
                                             }}
                                     ]
                                 }
@@ -43,7 +38,7 @@
                                 "StringLike": {
                                     "token.actions.githubusercontent.com:sub": {
                                         "Fn::Sub": [
-                                            "repo:${gitHubOrg}/${repoName}:*",
+                                            "repo:${gitHubOrg}/${repoName}",
                                             {
                                                 "gitHubOrg": {
                                                 "Ref": "GitHubOrg"
