@@ -18,7 +18,7 @@ jobs:
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::${{ secret.AWS_ACCOUNT_ID }}:role/${{ env.ROLE_NAME }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ env.ROLE_NAME }}
           aws-region: ${{ env.AWS_REGION }}
       - name: Create S3 bucket
         run: aws s3 mb s3://${{ env.BUCKET_NAME }}
