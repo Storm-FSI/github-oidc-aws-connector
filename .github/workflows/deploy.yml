@@ -21,7 +21,7 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ env.ROLE_NAME }}
           aws-region: ${{ env.AWS_REGION }}
       - name: Create S3 bucket
-        run: aws s3 mb s3://${{ env.BUCKET_NAME }}
+        run: aws s3 mb s3://${{ env.BUCKET_NAME }} || true
         env:
           AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
           ACL: "public"
