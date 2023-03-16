@@ -1,18 +1,35 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "Create a role with identity provider",
-    "Parameters" : {
-      "GitHubOrg" : {
-        "Type" : "String",
-        "Description" : "Enter Gitub Organisation"
-      },
-      "RepositoryName" : {
-        "Type" : "String",
-        "Description" : "Enter Repository Github Name (e.g. 'reponame:*' or just '*')"
-      },
-      "AWSManagedPolicy": {
+    "Parameters": {
+        "GitHubOrg": {
+            "Type": "String",
+            "Description": "Enter Gitub Organisation"
+        },
+        "RepositoryName": {
+            "Type": "String",
+            "Description": "Enter Repository Github Name (e.g. 'reponame:*' or just '*')"
+        },
+        "AWSManagedPolicy": {
             "Type": "String",
             "Description": "ARN of the IAM Managed Policy to add to the role (e.g. arn:aws:iam::aws:policy/AmazonS3FullAccess)"
+        },
+        "DeployGitHubIdP": {
+            "Type": "String",
+            "AllowedValues": [
+                "true",
+                "false"
+            ]
+        }
+    },
+    "Conditions": {
+        "IsDeployGitHubIdP": {
+            "Fn::Equals": [
+                {
+                    "Ref": "DeployGitHubIdP"
+                },
+                "true"
+            ]
         }
     },
     "Resources": {
@@ -27,9 +44,11 @@
                                 "Federated": {
                                     "Fn::Sub": [
                                         "arn:aws:iam::${accountId}:oidc-provider/token.actions.githubusercontent.com",
-                                        {"accountId": {
+                                        {
+                                            "accountId": {
                                                 "Ref": "AWS::AccountId"
-                                            }}
+                                            }
+                                        }
                                     ]
                                 }
                             },
@@ -41,14 +60,13 @@
                                             "repo:${gitHubOrg}/${repoName}",
                                             {
                                                 "gitHubOrg": {
-                                                "Ref": "GitHubOrg"
-                                            },
+                                                    "Ref": "GitHubOrg"
+                                                },
                                                 "repoName": {
-                                                    "Ref": "RepositoryName" 
+                                                    "Ref": "RepositoryName"
                                                 }
                                             }
                                         ]
-
                                     }
                                 },
                                 "ForAllValues:StringEquals": {
@@ -59,7 +77,9 @@
                         }
                     ]
                 },
-                "RoleName": { "Ref" : "AWS::StackName" },
+                "RoleName": {
+                    "Ref": "AWS::StackName"
+                },
                 "ManagedPolicyArns": [
                     {
                         "Ref": "AWSManagedPolicy"
@@ -68,15 +88,16 @@
             }
         },
         "OIDCProvider": {
+            "Condition": "IsDeployGitHubIdP",
             "Type": "AWS::IAM::OIDCProvider",
             "Properties": {
-              "Url": "https://token.actions.githubusercontent.com",
-              "ClientIdList": [
-                "sts.amazonaws.com"
-              ],
-              "ThumbprintList": [
-                "6938fd4d98bab03faadb97b34396831e3780aea1"
-              ]
+                "Url": "https://token.actions.githubusercontent.com",
+                "ClientIdList": [
+                    "sts.amazonaws.com"
+                ],
+                "ThumbprintList": [
+                    "6938fd4d98bab03faadb97b34396831e3780aea1"
+                ]
             }
         }
     },
@@ -86,15 +107,6 @@
             "Value": {
                 "Fn::GetAtt": [
                     "Role",
-                    "Arn"
-                ]
-            }
-        },
-        "GitHubIdentityProvider": {
-            "Description": "Create a identity provider",
-            "Value": {
-                "Fn::GetAtt": [
-                    "OIDCProvider",
                     "Arn"
                 ]
             }
